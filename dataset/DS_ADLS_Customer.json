@@ -19,6 +19,55 @@
 			"firstRowAsHeader": true,
 			"quoteChar": "\""
 		},
-		"schema": []
+		"schema": [
+			{
+				"name": "Index",
+				"type": "String"
+			},
+			{
+				"name": "Customer Id",
+				"type": "String"
+			},
+			{
+				"name": "First Name",
+				"type": "String"
+			},
+			{
+				"name": "Last Name",
+				"type": "String"
+			},
+			{
+				"name": "Company",
+				"type": "String"
+			},
+			{
+				"name": "City",
+				"type": "String"
+			},
+			{
+				"name": "Country",
+				"type": "String"
+			},
+			{
+				"name": "Phone 1",
+				"type": "String"
+			},
+			{
+				"name": "Phone 2",
+				"type": "String"
+			},
+			{
+				"name": "Email",
+				"type": "String"
+			},
+			{
+				"name": "Subscription Date",
+				"type": "String"
+			},
+			{
+				"name": "Website",
+				"type": "String"
+			}
+		]
 	}
 }

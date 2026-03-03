@@ -1,0 +1,52 @@
+{
+	"name": "DS_SQL_DIM_Product_SCD3",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_AzureSQLDB",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "ProductID",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "ProductName",
+				"type": "varchar"
+			},
+			{
+				"name": "CurrentCategory",
+				"type": "varchar"
+			},
+			{
+				"name": "PreviousCategory",
+				"type": "varchar"
+			},
+			{
+				"name": "CurrentPrice",
+				"type": "decimal",
+				"precision": 10,
+				"scale": 2
+			},
+			{
+				"name": "PreviousPrice",
+				"type": "decimal",
+				"precision": 10,
+				"scale": 2
+			},
+			{
+				"name": "UpdatedDate",
+				"type": "datetime",
+				"precision": 23,
+				"scale": 3
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "dim_product_scd3"
+		}
+	}
+}
