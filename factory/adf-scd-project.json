@@ -1,0 +1,9 @@
+{
+	"name": "adf-scd-project",
+	"location": "southindia",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "118905da-9c86-46ea-92f9-509123add6ed",
+		"tenantId": "57c47e73-c09c-4916-8cc1-d1ce0d8e5187"
+	}
+}
