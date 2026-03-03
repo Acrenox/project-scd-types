@@ -1,0 +1,113 @@
+{
+	"name": "DF_Load_Product_Staging",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "DS_ADLS_Product",
+						"type": "DatasetReference"
+					},
+					"name": "SourceCSV"
+				}
+			],
+			"sinks": [
+				{
+					"linkedService": {
+						"referenceName": "LS_AzureSQLDB",
+						"type": "LinkedServiceReference"
+					},
+					"name": "SinkStaging"
+				},
+				{
+					"dataset": {
+						"referenceName": "DS_ADLS_Product",
+						"type": "DatasetReference"
+					},
+					"name": "SinkRejected"
+				}
+			],
+			"transformations": [
+				{
+					"name": "AddAuditColumn"
+				},
+				{
+					"name": "DataQualityCheck"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          Index as short,",
+				"          Name as string,",
+				"          Description as string,",
+				"          Brand as string,",
+				"          Category as string,",
+				"          Price as short,",
+				"          Currency as string,",
+				"          Stock as short,",
+				"          EAN as long,",
+				"          Color as string,",
+				"          Size as string,",
+				"          Availability as string,",
+				"          {Internal ID} as short",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> SourceCSV",
+				"SourceCSV derive(ProductID = toInteger(byName('Index')),",
+				"          ProductName = byName('Name'),",
+				"          Brand = byName('Brand'),",
+				"          CurrentCategory = byName('Category'),",
+				"          CurrentPrice = toDecimal(byName('Price')),",
+				"          Availability = byName('Availability'),",
+				"          {_LoadDate} = currentDate()) ~> AddAuditColumn",
+				"AddAuditColumn split(!isNull(toInteger(byName('Index'))),",
+				"     disjoint: false) ~> DataQualityCheck@(ValidRecords, InvalidRecords)",
+				"DataQualityCheck@ValidRecords sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          ProductID as integer,",
+				"          ProductName as string,",
+				"          Category as string,",
+				"          Price as decimal(10,2),",
+				"          {_LoadDate} as date,",
+				"          {_SourceFile} as string",
+				"     ),",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'dbo',",
+				"     tableName: 'stg_product',",
+				"     insertable: true,",
+				"     updateable: false,",
+				"     deletable: false,",
+				"     upsertable: false,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> SinkStaging",
+				"DataQualityCheck@InvalidRecords sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          Index as string,",
+				"          Name as string,",
+				"          Description as string,",
+				"          Brand as string,",
+				"          Category as string,",
+				"          Price as string,",
+				"          Currency as string,",
+				"          Stock as string,",
+				"          EAN as string,",
+				"          Color as string,",
+				"          Size as string,",
+				"          Availability as string,",
+				"          {Internal ID} as string",
+				"     ),",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> SinkRejected"
+			]
+		}
+	}
+}
