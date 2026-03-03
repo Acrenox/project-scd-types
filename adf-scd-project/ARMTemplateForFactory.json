@@ -37,6 +37,364 @@
 	},
 	"resources": [
 		{
+			"name": "[concat(parameters('factoryName'), '/PL_Master')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "RunSCD1",
+						"type": "ExecutePipeline",
+						"dependsOn": [],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "PL_SCD1_Customer",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					},
+					{
+						"name": "RunSCD2",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "RunSCD1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "PL_SCD2_Customer",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					},
+					{
+						"name": "RunSCD3",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "RunSCD2",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "PL_SCD3_Product",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/PL_SCD1_Customer')]",
+				"[concat(variables('factoryId'), '/pipelines/PL_SCD2_Customer')]",
+				"[concat(variables('factoryId'), '/pipelines/PL_SCD3_Product')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_SCD1_Customer')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "LoadStaging",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "DF_Load_Customer_Staging",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"SourceCSV": {},
+									"SinkStaging": {},
+									"SinkRejected": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Coarse"
+						}
+					},
+					{
+						"name": "SP_SCD1_Upsert",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "LoadStaging",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[dbo].[usp_SCD1_Upsert]",
+							"storedProcedureParameters": {
+								"BusinessKey": {
+									"value": "",
+									"type": "String"
+								},
+								"StagingTable": {
+									"value": "",
+									"type": "String"
+								},
+								"TargetTable": {
+									"value": "",
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "LS_AzureSQLDB",
+							"type": "LinkedServiceReference"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/DF_Load_Customer_Staging')]",
+				"[concat(variables('factoryId'), '/linkedServices/LS_AzureSQLDB')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_SCD2_Customer')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "LoadStaging",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "DF_Load_Customer_Staging",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"SourceCSV": {},
+									"SinkStaging": {},
+									"SinkRejected": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Coarse"
+						}
+					},
+					{
+						"name": "SP_SCD2_ExpireInsert",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "LoadStaging",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[dbo].[usp_SCD2_Expire_And_Insert]",
+							"storedProcedureParameters": {
+								"BusinessKey": {
+									"value": "",
+									"type": "String"
+								},
+								"StagingTable": {
+									"value": "",
+									"type": "String"
+								},
+								"TargetTable": {
+									"value": "",
+									"type": "String"
+								},
+								"TrackingColumns": {
+									"value": "",
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "LS_AzureSQLDB",
+							"type": "LinkedServiceReference"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/DF_Load_Customer_Staging')]",
+				"[concat(variables('factoryId'), '/linkedServices/LS_AzureSQLDB')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_SCD3_Product')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "LoadStaging",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "DF_Load_Product_Staging",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"SourceCSV": {},
+									"SinkStaging": {},
+									"SinkRejected": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					},
+					{
+						"name": "SP_SCD3_Upsert",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "LoadStaging",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[dbo].[usp_SCD3_Upsert]",
+							"storedProcedureParameters": {
+								"BusinessKey": {
+									"value": "",
+									"type": "String"
+								},
+								"SCD3Columns": {
+									"value": "",
+									"type": "String"
+								},
+								"StagingTable": {
+									"value": "",
+									"type": "String"
+								},
+								"TargetTable": {
+									"value": "",
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "LS_AzureSQLDB",
+							"type": "LinkedServiceReference"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/DF_Load_Product_Staging')]",
+				"[concat(variables('factoryId'), '/linkedServices/LS_AzureSQLDB')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/DS_ADLS_Customer')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -614,21 +972,123 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/dataflow1')]",
+			"name": "[concat(parameters('factoryName'), '/DF_Load_Product_Staging')]",
 			"type": "Microsoft.DataFactory/factories/dataflows",
 			"apiVersion": "2018-06-01",
 			"properties": {
 				"type": "MappingDataFlow",
 				"typeProperties": {
-					"sources": [],
-					"sinks": [],
-					"transformations": [],
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "DS_ADLS_Product",
+								"type": "DatasetReference"
+							},
+							"name": "SourceCSV"
+						}
+					],
+					"sinks": [
+						{
+							"linkedService": {
+								"referenceName": "LS_AzureSQLDB",
+								"type": "LinkedServiceReference"
+							},
+							"name": "SinkStaging"
+						},
+						{
+							"dataset": {
+								"referenceName": "DS_ADLS_Product",
+								"type": "DatasetReference"
+							},
+							"name": "SinkRejected"
+						}
+					],
+					"transformations": [
+						{
+							"name": "AddAuditColumn"
+						},
+						{
+							"name": "DataQualityCheck"
+						}
+					],
 					"scriptLines": [
-						""
+						"source(output(",
+						"          Index as short,",
+						"          Name as string,",
+						"          Description as string,",
+						"          Brand as string,",
+						"          Category as string,",
+						"          Price as short,",
+						"          Currency as string,",
+						"          Stock as short,",
+						"          EAN as long,",
+						"          Color as string,",
+						"          Size as string,",
+						"          Availability as string,",
+						"          {Internal ID} as short",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> SourceCSV",
+						"SourceCSV derive(ProductID = toInteger(byName('Index')),",
+						"          ProductName = byName('Name'),",
+						"          Brand = byName('Brand'),",
+						"          CurrentCategory = byName('Category'),",
+						"          CurrentPrice = toDecimal(byName('Price')),",
+						"          Availability = byName('Availability'),",
+						"          {_LoadDate} = currentDate()) ~> AddAuditColumn",
+						"AddAuditColumn split(!isNull(toInteger(byName('Index'))),",
+						"     disjoint: false) ~> DataQualityCheck@(ValidRecords, InvalidRecords)",
+						"DataQualityCheck@ValidRecords sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          ProductID as integer,",
+						"          ProductName as string,",
+						"          Category as string,",
+						"          Price as decimal(10,2),",
+						"          {_LoadDate} as date,",
+						"          {_SourceFile} as string",
+						"     ),",
+						"     format: 'table',",
+						"     store: 'sqlserver',",
+						"     schemaName: 'dbo',",
+						"     tableName: 'stg_product',",
+						"     insertable: true,",
+						"     updateable: false,",
+						"     deletable: false,",
+						"     upsertable: false,",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError') ~> SinkStaging",
+						"DataQualityCheck@InvalidRecords sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          Index as string,",
+						"          Name as string,",
+						"          Description as string,",
+						"          Brand as string,",
+						"          Category as string,",
+						"          Price as string,",
+						"          Currency as string,",
+						"          Stock as string,",
+						"          EAN as string,",
+						"          Color as string,",
+						"          Size as string,",
+						"          Availability as string,",
+						"          {Internal ID} as string",
+						"     ),",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> SinkRejected"
 					]
 				}
 			},
-			"dependsOn": []
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_ADLS_Product')]",
+				"[concat(variables('factoryId'), '/linkedServices/LS_AzureSQLDB')]"
+			]
 		}
 	]
 }
