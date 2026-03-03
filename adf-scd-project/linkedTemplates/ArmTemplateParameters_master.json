@@ -1,0 +1,33 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "adf-scd-project"
+		},
+		"LS_ADLS_Gen2_accountKey": {
+			"value": ""
+		},
+		"LS_AzureSQLDB_password": {
+			"value": ""
+		},
+		"LS_ADLS_Gen2_properties_typeProperties_url": {
+			"value": "https://adlsscdproject.dfs.core.windows.net/"
+		},
+		"LS_AzureSQLDB_properties_typeProperties_server": {
+			"value": "sqlserver-scd-project.database.windows.net"
+		},
+		"LS_AzureSQLDB_properties_typeProperties_database": {
+			"value": "sqldb-scd-project"
+		},
+		"LS_AzureSQLDB_properties_typeProperties_userName": {
+			"value": "sqladmin"
+		},
+		"containerUri": {
+			"value": ""
+		},
+		"containerSasToken": {
+			"value": ""
+		}
+	}
+}
