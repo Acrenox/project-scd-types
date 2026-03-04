@@ -144,8 +144,7 @@
 								"parameters": {},
 								"datasetParameters": {
 									"SourceCSV": {},
-									"SinkStaging": {},
-									"SinkRejected": {}
+									"SinkStaging": {}
 								}
 							},
 							"staging": {},
@@ -176,21 +175,7 @@
 						},
 						"userProperties": [],
 						"typeProperties": {
-							"storedProcedureName": "[[dbo].[usp_SCD1_Upsert]",
-							"storedProcedureParameters": {
-								"BusinessKey": {
-									"value": "",
-									"type": "String"
-								},
-								"StagingTable": {
-									"value": "",
-									"type": "String"
-								},
-								"TargetTable": {
-									"value": "",
-									"type": "String"
-								}
-							}
+							"storedProcedureName": "[[dbo].[usp_SCD1_Upsert]"
 						},
 						"linkedServiceName": {
 							"referenceName": "LS_AzureSQLDB",
@@ -233,8 +218,7 @@
 								"parameters": {},
 								"datasetParameters": {
 									"SourceCSV": {},
-									"SinkStaging": {},
-									"SinkRejected": {}
+									"SinkStaging": {}
 								}
 							},
 							"staging": {},
@@ -265,25 +249,7 @@
 						},
 						"userProperties": [],
 						"typeProperties": {
-							"storedProcedureName": "[[dbo].[usp_SCD2_Expire_And_Insert]",
-							"storedProcedureParameters": {
-								"BusinessKey": {
-									"value": "",
-									"type": "String"
-								},
-								"StagingTable": {
-									"value": "",
-									"type": "String"
-								},
-								"TargetTable": {
-									"value": "",
-									"type": "String"
-								},
-								"TrackingColumns": {
-									"value": "",
-									"type": "String"
-								}
-							}
+							"storedProcedureName": "[[dbo].[usp_SCD2_Expire_And_Insert]"
 						},
 						"linkedServiceName": {
 							"referenceName": "LS_AzureSQLDB",
@@ -326,8 +292,7 @@
 								"parameters": {},
 								"datasetParameters": {
 									"SourceCSV": {},
-									"SinkStaging": {},
-									"SinkRejected": {}
+									"SinkStaging": {}
 								}
 							},
 							"staging": {},
@@ -358,25 +323,7 @@
 						},
 						"userProperties": [],
 						"typeProperties": {
-							"storedProcedureName": "[[dbo].[usp_SCD3_Upsert]",
-							"storedProcedureParameters": {
-								"BusinessKey": {
-									"value": "",
-									"type": "String"
-								},
-								"SCD3Columns": {
-									"value": "",
-									"type": "String"
-								},
-								"StagingTable": {
-									"value": "",
-									"type": "String"
-								},
-								"TargetTable": {
-									"value": "",
-									"type": "String"
-								}
-							}
+							"storedProcedureName": "[[dbo].[usp_SCD3_Upsert]"
 						},
 						"linkedServiceName": {
 							"referenceName": "LS_AzureSQLDB",
@@ -876,13 +823,6 @@
 								"type": "LinkedServiceReference"
 							},
 							"name": "SinkStaging"
-						},
-						{
-							"dataset": {
-								"referenceName": "DS_ADLS_Customer",
-								"type": "DatasetReference"
-							},
-							"name": "SinkRejected"
 						}
 					],
 					"transformations": [
@@ -890,7 +830,7 @@
 							"name": "AddAuditColumns"
 						},
 						{
-							"name": "DataQualityCheck"
+							"name": "SelectColumns"
 						}
 					],
 					"scriptLines": [
@@ -911,16 +851,25 @@
 						"     allowSchemaDrift: true,",
 						"     validateSchema: false,",
 						"     ignoreNoFilesFound: false) ~> SourceCSV",
-						"SourceCSV derive(CustomerID = toInteger(byName('Customer Id')),",
+						"SourceCSV derive(CustomerID = toInteger(byName('Index')),",
 						"          CustomerName = concat(byName('First Name'), ' ', byName('Last Name')),",
 						"          Email = byName('Email'),",
 						"          City = byName('City'),",
 						"          Country = byName('Country'),",
 						"          Company = byName('Company'),",
 						"          {_LoadDate} = currentDate()) ~> AddAuditColumns",
-						"AddAuditColumns split(!isNull(toInteger(byName('Customer Id'))),",
-						"     disjoint: false) ~> DataQualityCheck@(ValidRecords, InvalidRecords)",
-						"DataQualityCheck@ValidRecords sink(allowSchemaDrift: true,",
+						"AddAuditColumns select(mapColumn(",
+						"          Company,",
+						"          City,",
+						"          Country,",
+						"          Email,",
+						"          CustomerID,",
+						"          CustomerName,",
+						"          {_LoadDate}",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> SelectColumns",
+						"SelectColumns sink(allowSchemaDrift: true,",
 						"     validateSchema: false,",
 						"     input(",
 						"          CustomerID as integer,",
@@ -941,28 +890,7 @@
 						"     truncate: true,",
 						"     skipDuplicateMapInputs: true,",
 						"     skipDuplicateMapOutputs: true,",
-						"     errorHandlingOption: 'stopOnFirstError') ~> SinkStaging",
-						"DataQualityCheck@InvalidRecords sink(allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     input(",
-						"          Index as string,",
-						"          {Customer Id} as string,",
-						"          {First Name} as string,",
-						"          {Last Name} as string,",
-						"          Company as string,",
-						"          City as string,",
-						"          Country as string,",
-						"          {Phone 1} as string,",
-						"          {Phone 2} as string,",
-						"          Email as string,",
-						"          {Subscription Date} as string,",
-						"          Website as string",
-						"     ),",
-						"     umask: 0022,",
-						"     preCommands: [],",
-						"     postCommands: [],",
-						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true) ~> SinkRejected"
+						"     errorHandlingOption: 'stopOnFirstError') ~> SinkStaging"
 					]
 				}
 			},
@@ -994,13 +922,6 @@
 								"type": "LinkedServiceReference"
 							},
 							"name": "SinkStaging"
-						},
-						{
-							"dataset": {
-								"referenceName": "DS_ADLS_Product",
-								"type": "DatasetReference"
-							},
-							"name": "SinkRejected"
 						}
 					],
 					"transformations": [
@@ -1008,7 +929,7 @@
 							"name": "AddAuditColumn"
 						},
 						{
-							"name": "DataQualityCheck"
+							"name": "SelectedColumns"
 						}
 					],
 					"scriptLines": [
@@ -1037,9 +958,18 @@
 						"          CurrentPrice = toDecimal(byName('Price')),",
 						"          Availability = byName('Availability'),",
 						"          {_LoadDate} = currentDate()) ~> AddAuditColumn",
-						"AddAuditColumn split(!isNull(toInteger(byName('Index'))),",
-						"     disjoint: false) ~> DataQualityCheck@(ValidRecords, InvalidRecords)",
-						"DataQualityCheck@ValidRecords sink(allowSchemaDrift: true,",
+						"AddAuditColumn select(mapColumn(",
+						"          Brand,",
+						"          Availability,",
+						"          ProductID,",
+						"          ProductName,",
+						"          CurrentCategory,",
+						"          CurrentPrice,",
+						"          {_LoadDate}",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> SelectedColumns",
+						"SelectedColumns sink(allowSchemaDrift: true,",
 						"     validateSchema: false,",
 						"     input(",
 						"          ProductID as integer,",
@@ -1057,31 +987,10 @@
 						"     updateable: false,",
 						"     deletable: false,",
 						"     upsertable: false,",
+						"     truncate: true,",
 						"     skipDuplicateMapInputs: true,",
 						"     skipDuplicateMapOutputs: true,",
-						"     errorHandlingOption: 'stopOnFirstError') ~> SinkStaging",
-						"DataQualityCheck@InvalidRecords sink(allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     input(",
-						"          Index as string,",
-						"          Name as string,",
-						"          Description as string,",
-						"          Brand as string,",
-						"          Category as string,",
-						"          Price as string,",
-						"          Currency as string,",
-						"          Stock as string,",
-						"          EAN as string,",
-						"          Color as string,",
-						"          Size as string,",
-						"          Availability as string,",
-						"          {Internal ID} as string",
-						"     ),",
-						"     umask: 0022,",
-						"     preCommands: [],",
-						"     postCommands: [],",
-						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true) ~> SinkRejected"
+						"     errorHandlingOption: 'stopOnFirstError') ~> SinkStaging"
 					]
 				}
 			},
