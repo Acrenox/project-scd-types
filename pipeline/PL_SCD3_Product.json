@@ -46,25 +46,7 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"storedProcedureName": "[dbo].[usp_SCD3_Upsert]",
-					"storedProcedureParameters": {
-						"BusinessKey": {
-							"value": "",
-							"type": "String"
-						},
-						"SCD3Columns": {
-							"value": "",
-							"type": "String"
-						},
-						"StagingTable": {
-							"value": "",
-							"type": "String"
-						},
-						"TargetTable": {
-							"value": "",
-							"type": "String"
-						}
-					}
+					"storedProcedureName": "[dbo].[usp_SCD3_Upsert]"
 				},
 				"linkedServiceName": {
 					"referenceName": "LS_AzureSQLDB",

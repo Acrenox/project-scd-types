@@ -19,13 +19,6 @@
 						"type": "LinkedServiceReference"
 					},
 					"name": "SinkStaging"
-				},
-				{
-					"dataset": {
-						"referenceName": "DS_ADLS_Customer",
-						"type": "DatasetReference"
-					},
-					"name": "SinkRejected"
 				}
 			],
 			"transformations": [
@@ -33,7 +26,7 @@
 					"name": "AddAuditColumns"
 				},
 				{
-					"name": "DataQualityCheck"
+					"name": "SelectColumns"
 				}
 			],
 			"scriptLines": [
@@ -54,16 +47,25 @@
 				"     allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     ignoreNoFilesFound: false) ~> SourceCSV",
-				"SourceCSV derive(CustomerID = toInteger(byName('Customer Id')),",
+				"SourceCSV derive(CustomerID = toInteger(byName('Index')),",
 				"          CustomerName = concat(byName('First Name'), ' ', byName('Last Name')),",
 				"          Email = byName('Email'),",
 				"          City = byName('City'),",
 				"          Country = byName('Country'),",
 				"          Company = byName('Company'),",
 				"          {_LoadDate} = currentDate()) ~> AddAuditColumns",
-				"AddAuditColumns split(!isNull(toInteger(byName('Customer Id'))),",
-				"     disjoint: false) ~> DataQualityCheck@(ValidRecords, InvalidRecords)",
-				"DataQualityCheck@ValidRecords sink(allowSchemaDrift: true,",
+				"AddAuditColumns select(mapColumn(",
+				"          Company,",
+				"          City,",
+				"          Country,",
+				"          Email,",
+				"          CustomerID,",
+				"          CustomerName,",
+				"          {_LoadDate}",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> SelectColumns",
+				"SelectColumns sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     input(",
 				"          CustomerID as integer,",
@@ -84,28 +86,7 @@
 				"     truncate: true,",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true,",
-				"     errorHandlingOption: 'stopOnFirstError') ~> SinkStaging",
-				"DataQualityCheck@InvalidRecords sink(allowSchemaDrift: true,",
-				"     validateSchema: false,",
-				"     input(",
-				"          Index as string,",
-				"          {Customer Id} as string,",
-				"          {First Name} as string,",
-				"          {Last Name} as string,",
-				"          Company as string,",
-				"          City as string,",
-				"          Country as string,",
-				"          {Phone 1} as string,",
-				"          {Phone 2} as string,",
-				"          Email as string,",
-				"          {Subscription Date} as string,",
-				"          Website as string",
-				"     ),",
-				"     umask: 0022,",
-				"     preCommands: [],",
-				"     postCommands: [],",
-				"     skipDuplicateMapInputs: true,",
-				"     skipDuplicateMapOutputs: true) ~> SinkRejected"
+				"     errorHandlingOption: 'stopOnFirstError') ~> SinkStaging"
 			]
 		}
 	}

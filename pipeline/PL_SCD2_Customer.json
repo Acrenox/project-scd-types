@@ -46,25 +46,7 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"storedProcedureName": "[dbo].[usp_SCD2_Expire_And_Insert]",
-					"storedProcedureParameters": {
-						"BusinessKey": {
-							"value": "",
-							"type": "String"
-						},
-						"StagingTable": {
-							"value": "",
-							"type": "String"
-						},
-						"TargetTable": {
-							"value": "",
-							"type": "String"
-						},
-						"TrackingColumns": {
-							"value": "",
-							"type": "String"
-						}
-					}
+					"storedProcedureName": "[dbo].[usp_SCD2_Expire_And_Insert]"
 				},
 				"linkedServiceName": {
 					"referenceName": "LS_AzureSQLDB",
